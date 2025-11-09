@@ -1,32 +1,7 @@
 import { useState, useEffect } from "react";
-import { useEffect, useState } from "react";
 
 function App() {
-  const [empleados, setEmpleados] = useState([]);
-
-  useEffect(() => {
-    fetch("/data/empleados.json")
-      .then((res) => res.json())
-      .then((data) => setEmpleados(data))
-      .catch((err) => console.error("Error cargando empleados:", err));
-  }, []);
-
-  return (
-    <div>
-      <h1>Lista de empleados</h1>
-      <ul>
-        {empleados.map((empleado, index) => (
-          <li key={index}>{empleado.nombre}</li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-export default App;
-
-
-function App() {
+  // Estados principales
   const [numeroNomina, setNumeroNomina] = useState("");
   const [nombre, setNombre] = useState("");
   const [diasSeleccionados, setDiasSeleccionados] = useState([]);
@@ -34,8 +9,17 @@ function App() {
   const [adminMode, setAdminMode] = useState(false);
   const [usuario, setUsuario] = useState("");
   const [password, setPassword] = useState("");
+  const [empleados, setEmpleados] = useState([]);
 
-  // Menú semanal
+  // Cargar empleados desde JSON
+  useEffect(() => {
+    fetch("/data/empleados.json")
+      .then((res) => res.json())
+      .then((data) => setEmpleados(data))
+      .catch((err) => console.error("Error cargando empleados:", err));
+  }, []);
+
+  // Inicializar menú semanal
   useEffect(() => {
     setMenuSemana([
       { dia: "Lunes", platillo: "Pollo en salsa verde" },
@@ -46,13 +30,13 @@ function App() {
     ]);
   }, []);
 
-  // Buscar empleado
+  // Buscar empleado por número de nómina
   useEffect(() => {
-    const empleado = empleadosData.find(
+    const empleado = empleados.find(
       (emp) => emp["Número de Nómina"] === Number(numeroNomina)
     );
     setNombre(empleado ? empleado["Nombre"] : "");
-  }, [numeroNomina]);
+  }, [numeroNomina, empleados]);
 
   // Selección de días
   const toggleDia = (dia) => {
@@ -63,83 +47,34 @@ function App() {
     }
   };
 
-// Registrar y guardar en backend
-const registrar = async () => {
-  if (!nombre) {
-    alert("Por favor ingresa un número de nómina válido.");
-    return;
-  }
+  // Registrar en backend
+  const registrar = async () => {
+    if (!nombre) {
+      alert("Por favor ingresa un número de nómina válido.");
+      return;
+    }
 
-  const registro = {
-    numeroNomina,
-    nombre,
-    diasSeleccionados,
-  };
-const registrar = async () => {
-  if (!nombre) {
-    alert("Por favor ingresa un número de nómina válido.");
-    return;
-  }
+    const registro = { numeroNomina, nombre, diasSeleccionados };
 
-  const registro = { numeroNomina, nombre, diasSeleccionados };
+    try {
+      const response = await fetch("http://localhost:4000/api/registrar", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(registro),
+      });
 
-  try {
-    const response = await fetch("http://localhost:4000/api/registrar", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(registro),
-    });
+      if (!response.ok) throw new Error("Error al registrar");
 
-    if (!response.ok) throw new Error("Error al registrar");
-
-    const data = await response.json();
-    alert(`✅ ${data.message}`);
-
-    setDiasSeleccionados([]);
-  } catch (error) {
-    console.error(error);
-    alert("❌ Error al conectar con el servidor.");
-  }
-};
-
-  try {
-    const response = await fetch("http://localhost:4000/api/registrar", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(registro),
-    });
-
-    if (response.ok) {
       const data = await response.json();
       alert(`✅ ${data.message}`);
       setDiasSeleccionados([]);
-    } else {
-      alert("❌ Ocurrió un error al registrar. Intenta de nuevo.");
-    }
-  } catch (error) {
-    console.error("Error al registrar:", error);
-    alert("⚠️ Error al conectar con el servidor.");
-  }
-
-
-
-    const res = await fetch("http://localhost:4000/api/registrar", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(registro),
-    });
-
-    if (res.ok) {
-      alert("✅ Registro completado con éxito.");
-      setDiasSeleccionados([]);
-    } else {
-      alert("❌ Error al guardar el registro.");
+    } catch (error) {
+      console.error(error);
+      alert("❌ Error al conectar con el servidor.");
     }
   };
 
-  // Iniciar sesión como administrador
+  // Login de administrador
   const loginAdmin = () => {
     if (
       (usuario === "Lsustaita" || usuario === "Losorio") &&
@@ -153,15 +88,21 @@ const registrar = async () => {
 
   // Descargar registros en Excel
   const descargarExcel = async () => {
-    const res = await fetch("http://localhost:4000/api/descargar-excel");
-    const blob = await res.blob();
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "registros_comedor.xlsx";
-    a.click();
+    try {
+      const res = await fetch("http://localhost:4000/api/descargar-excel");
+      const blob = await res.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "registros_comedor.xlsx";
+      a.click();
+    } catch (error) {
+      console.error("Error descargando Excel:", error);
+      alert("❌ Error al descargar registros.");
+    }
   };
 
+  // Renderizado
   return (
     <div
       style={{
@@ -172,10 +113,12 @@ const registrar = async () => {
         fontFamily: "Arial",
       }}
     >
-      {/* 🔒 Botón de inicio de sesión arriba a la derecha */}
+      {/* Botón de login */}
       {!adminMode && (
         <button
-          onClick={() => document.getElementById("loginForm").style.display = "block"}
+          onClick={() =>
+            (document.getElementById("loginForm").style.display = "block")
+          }
           style={{
             position: "absolute",
             right: "20px",
@@ -242,7 +185,7 @@ const registrar = async () => {
         Registro de Comedor Peasa
       </h1>
 
-      {/* Modo Administrador */}
+      {/* Panel Administrador */}
       {adminMode ? (
         <div
           style={{
@@ -273,7 +216,7 @@ const registrar = async () => {
           </button>
         </div>
       ) : (
-        // 🧾 Registro normal (empleados)
+        // Registro normal
         <div
           style={{
             backgroundColor: "white",
