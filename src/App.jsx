@@ -1,5 +1,30 @@
 import { useState, useEffect } from "react";
-import empleadosData from "./data/empleados.json";
+import { useEffect, useState } from "react";
+
+function App() {
+  const [empleados, setEmpleados] = useState([]);
+
+  useEffect(() => {
+    fetch("/data/empleados.json")
+      .then((res) => res.json())
+      .then((data) => setEmpleados(data))
+      .catch((err) => console.error("Error cargando empleados:", err));
+  }, []);
+
+  return (
+    <div>
+      <h1>Lista de empleados</h1>
+      <ul>
+        {empleados.map((empleado, index) => (
+          <li key={index}>{empleado.nombre}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+export default App;
+
 
 function App() {
   const [numeroNomina, setNumeroNomina] = useState("");
