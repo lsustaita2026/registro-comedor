@@ -29,11 +29,11 @@ function App() {
   // Inicializar menú de la semana
   useEffect(() => {
     setMenuSemana([
-      { dia: "Lunes", platillo: "Flautas de Papa" },
-      { dia: "Martes", platillo: "Indios" },
-      { dia: "Miércoles", platillo: "Mole de P/co" },
-      { dia: "Jueves", platillo: "Club Sandwich" },
-      { dia: "Viernes", platillo: "Pambazos" },
+      { dia: "Lunes", platillo: "Gringa de Pastor" },
+      { dia: "Martes", platillo: "Discada" },
+      { dia: "Miércoles", platillo: "Molletes" },
+      { dia: "Jueves", platillo: "Chimichangas" },
+      { dia: "Viernes", platillo: "Chiles Rellenos" },
     ]);
   }, []);
 
